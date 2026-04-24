@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Der Anleger – Depotentwicklung</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=IBM+Plex+Mono:wght@300;400;600&display=swap" rel="stylesheet" />
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+```
+:root {
+--red: #cc0000;
+--red-dark: #8a0000;
+--red-deep: #4a0000;
+--gold: #f0c040;
+--cream: #fff8ee;
+--white: #ffffff;
+}
+
+body {
+background-color: var(--red);
+color: var(--white);
+font-family: 'IBM Plex Mono', monospace;
+min-height: 100vh;
+overflow-x: hidden;
+position: relative;
+}
+
+/* Background texture / grain */
+body::before {
+content: '';
+position: fixed;
+inset: 0;
+background-image:
+radial-gradient(ellipse at 20% 50%, rgba(0,0,0,0.35) 0%, transparent 60%),
+radial-gradient(ellipse at 80% 20%, rgba(180,0,0,0.4) 0%, transparent 50%);
+pointer-events: none;
+z-index: 0;
+}
+
+/* SVG ticker pattern overlay */
+body::after {
+content: '';
+position: fixed;
+inset: 0;
+background-image: repeating-linear-gradient(
+0deg,
+transparent,
+transparent 38px,
+rgba(0,0,0,0.08) 38px,
+rgba(0,0,0,0.08) 40px
+);
+pointer-events: none;
+z-index: 0;
+}
+
+.container {
+position: relative;
+z-index: 1;
+max-width: 900px;
+margin: 0 auto;
+padding: 3rem 2rem;
+display: flex;
+flex-direction: column;
+min-height: 100vh;
+}
+
+/* ── HEADER ── */
+header {
+display: flex;
+justify-content: space-between;
+align-items: center;
+border-bottom: 2px solid rgba(255,255,255,0.2);
+padding-bottom: 1.2rem;
+animation: fadeDown 0.8s ease both;
+}
+
+.logo-text {
+font-family: 'IBM Plex Mono', monospace;
+font-size: 0.75rem;
+letter-spacing: 0.25em;
+text-transform: uppercase;
+color: rgba(255,255,255,0.6);
+}
+
+.ticker-live {
+font-size: 0.7rem;
+letter-spacing: 0.15em;
+color: var(--gold);
+display: flex;
+align-items: center;
+gap: 0.4rem;
+}
+
+.dot {
+width: 7px; height: 7px;
+background: var(--gold);
+border-radius: 50%;
+animation: pulse 1.4s ease-in-out infinite;
+}
+
+/* ── HERO ── */
+.hero {
+flex: 1;
+display: flex;
+flex-direction: column;
+justify-content: center;
+padding: 4rem 0 2rem;
+}
+
+.eyebrow {
+font-size: 0.7rem;
+letter-spacing: 0.3em;
+text-transform: uppercase;
+color: var(--gold);
+margin-bottom: 1.2rem;
+animation: fadeUp 0.9s 0.1s ease both;
+}
+
+h1 {
+font-family: 'Playfair Display', serif;
+font-size: clamp(3.5rem, 10vw, 7rem);
+font-weight: 900;
+line-height: 0.95;
+letter-spacing: -0.02em;
+margin-bottom: 0.3rem;
+animation: fadeUp 0.9s 0.2s ease both;
+}
+
+h1 .sub {
+display: block;
+font-style: italic;
+font-weight: 400;
+font-size: clamp(1.8rem, 5vw, 3.5rem);
+color: rgba(255,255,255,0.75);
+}
+
+.divider {
+width: 80px;
+height: 3px;
+background: var(--gold);
+margin: 2rem 0;
+animation: expand 0.9s 0.4s ease both;
+transform-origin: left;
+}
+
+.description {
+font-size: clamp(0.95rem, 2vw, 1.1rem);
+line-height: 1.8;
+color: rgba(255,255,255,0.85);
+max-width: 560px;
+animation: fadeUp 0.9s 0.5s ease both;
+}
+
+.description strong {
+color: var(--gold);
+font-weight: 600;
+}
+
+/* ── FAKE CHART ── */
+.chart-area {
+margin: 3rem 0;
+animation: fadeUp 1s 0.6s ease both;
+}
+
+.chart-label {
+font-size: 0.65rem;
+letter-spacing: 0.2em;
+text-transform: uppercase;
+color: rgba(255,255,255,0.4);
+margin-bottom: 0.8rem;
+}
+
+.chart-svg-wrap {
+background: rgba(0,0,0,0.25);
+border: 1px solid rgba(255,255,255,0.1);
+border-radius: 4px;
+padding: 1.2rem;
+position: relative;
+overflow: hidden;
+}
+
+.chart-svg-wrap::before {
+content: 'COMING SOON';
+position: absolute;
+top: 50%; left: 50%;
+transform: translate(-50%,-50%);
+font-family: 'Playfair Display', serif;
+font-size: 1.4rem;
+letter-spacing: 0.3em;
+color: rgba(255,255,255,0.08);
+white-space: nowrap;
+font-style: italic;
+}
+
+svg.chart {
+width: 100%;
+height: 120px;
+display: block;
+}
+
+.chart-line {
+fill: none;
+stroke: var(--gold);
+stroke-width: 2.5;
+stroke-linecap: round;
+stroke-dasharray: 600;
+stroke-dashoffset: 600;
+animation: drawLine 2s 1.2s ease forwards;
+}
+
+.chart-area-fill {
+fill: url(#goldGrad);
+opacity: 0;
+animation: fadeIn 0.5s 3s ease forwards;
+}
+
+/* ── STATS ROW ── */
+.stats {
+display: grid;
+grid-template-columns: repeat(3, 1fr);
+gap: 1px;
+background: rgba(255,255,255,0.1);
+border: 1px solid rgba(255,255,255,0.1);
+margin-bottom: 3rem;
+animation: fadeUp 0.9s 0.7s ease both;
+}
+
+.stat {
+background: rgba(0,0,0,0.2);
+padding: 1.2rem 1rem;
+text-align: center;
+}
+
+.stat-val {
+font-family: 'Playfair Display', serif;
+font-size: 1.6rem;
+color: var(--gold);
+font-style: italic;
+display: block;
+}
+
+.stat-label {
+font-size: 0.6rem;
+letter-spacing: 0.2em;
+text-transform: uppercase;
+color: rgba(255,255,255,0.45);
+margin-top: 0.3rem;
+display: block;
+}
+
+/* ── FOOTER ── */
+footer {
+border-top: 1px solid rgba(255,255,255,0.15);
+padding-top: 1.5rem;
+display: flex;
+justify-content: space-between;
+align-items: center;
+flex-wrap: wrap;
+gap: 0.8rem;
+animation: fadeUp 0.9s 0.9s ease both;
+}
+
+.footer-name {
+font-family: 'Playfair Display', serif;
+font-size: 1rem;
+font-style: italic;
+color: rgba(255,255,255,0.7);
+}
+
+.footer-copy {
+font-size: 0.65rem;
+letter-spacing: 0.15em;
+color: rgba(255,255,255,0.3);
+text-transform: uppercase;
+}
+
+/* ── FLOATING TICKERS ── */
+.ticker-strip {
+position: fixed;
+bottom: 0; left: 0; right: 0;
+background: rgba(0,0,0,0.5);
+backdrop-filter: blur(4px);
+border-top: 1px solid rgba(255,255,255,0.1);
+overflow: hidden;
+height: 32px;
+z-index: 10;
+}
+
+.ticker-track {
+display: flex;
+gap: 3rem;
+white-space: nowrap;
+animation: scrollTicker 22s linear infinite;
+height: 100%;
+align-items: center;
+padding: 0 2rem;
+font-size: 0.68rem;
+letter-spacing: 0.1em;
+}
+
+.tick { color: rgba(255,255,255,0.55); }
+.tick .sym { color: var(--white); font-weight: 600; margin-right: 0.4rem; }
+.tick .pos { color: #6ee87a; }
+.tick .neg { color: #ff7070; }
+
+/* ── KEYFRAMES ── */
+@keyframes fadeDown { from { opacity:0; transform:translateY(-16px); } to { opacity:1; transform:translateY(0); } }
+@keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+@keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+@keyframes expand { from { transform:scaleX(0); } to { transform:scaleX(1); } }
+@keyframes pulse { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:0.4; transform:scale(0.7); } }
+@keyframes drawLine { to { stroke-dashoffset: 0; } }
+@keyframes scrollTicker { from { transform:translateX(0); } to { transform:translateX(-50%); } }
+
+@media (max-width: 600px) {
+.stats { grid-template-columns: repeat(3,1fr); }
+h1 { font-size: 3rem; }
+footer { flex-direction: column; align-items: flex-start; }
+}
+```
+
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<header>
+<span class="logo-text">Depotentwicklung &amp; Analyse</span>
+<span class="ticker-live"><span class="dot"></span> Demnächst Live</span>
+</header>
+
+<main class="hero">
+<p class="eyebrow">Portfolio · Märkte · Transparenz</p>
+<h1>
+Der<br>
+<span class="sub">Anleger.</span>
+</h1>
+<div class="divider"></div>
+<p class="description">
+Diese Seite befindet sich derzeit <strong>im Aufbau</strong>.<br><br>
+Bald findest du hier eine <strong>transparente Depotentwicklung</strong> –
+Einblicke in Investments, Strategien und die Entwicklung eines realen Portfolios.
+Keine Finanzberatung, sondern <strong>authentischer Einblick</strong> in die Welt der Kapitalmärkte.
+</p>
+</main>
+
+<!-- Fake chart -->
+
+<div class="chart-area">
+<p class="chart-label">Depotentwicklung — Vorschau</p>
+<div class="chart-svg-wrap">
+<svg class="chart" viewBox="0 0 600 120" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<linearGradient id="goldGrad" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0%" stop-color="#f0c040" stop-opacity="0.3"/>
+<stop offset="100%" stop-color="#f0c040" stop-opacity="0"/>
+</linearGradient>
+</defs>
+<!-- area fill path -->
+<path class="chart-area-fill"
+d="M0,95 C40,90 60,80 100,70 C140,60 160,75 200,55 C240,35 260,45 300,30 C340,15 370,25 420,18 C460,12 500,20 560,10 L600,10 L600,120 L0,120 Z"/>
+<!-- line -->
+<path class="chart-line"
+d="M0,95 C40,90 60,80 100,70 C140,60 160,75 200,55 C240,35 260,45 300,30 C340,15 370,25 420,18 C460,12 500,20 560,10"/>
+</svg>
+</div>
+</div>
+
+<!-- Stats -->
+
+<div class="stats">
+<div class="stat">
+<span class="stat-val">—</span>
+<span class="stat-label">Gesamtrendite</span>
+</div>
+<div class="stat">
+<span class="stat-val">—</span>
+<span class="stat-label">Positionen</span>
+</div>
+<div class="stat">
+<span class="stat-val">2025</span>
+<span class="stat-label">Start</span>
+</div>
+</div>
+
+<footer>
+<span class="footer-name">Der Anleger</span>
+<span class="footer-copy">© 2025 · Seite im Aufbau · Keine Anlageberatung</span>
+</footer>
+
+</div>
+
+<!-- Live ticker strip -->
+
+<div class="ticker-strip">
+<div class="ticker-track">
+<span class="tick"><span class="sym">DAX</span> 18.432 <span class="pos">▲ +0.84%</span></span>
+<span class="tick"><span class="sym">AAPL</span> 189.45 <span class="pos">▲ +1.12%</span></span>
+<span class="tick"><span class="sym">MSFT</span> 415.20 <span class="neg">▼ -0.31%</span></span>
+<span class="tick"><span class="sym">S&amp;P 500</span> 5.218 <span class="pos">▲ +0.55%</span></span>
+<span class="tick"><span class="sym">NVDA</span> 878.10 <span class="pos">▲ +2.41%</span></span>
+<span class="tick"><span class="sym">EURUSD</span> 1.0842 <span class="neg">▼ -0.09%</span></span>
+<span class="tick"><span class="sym">BTC</span> 62.450 <span class="pos">▲ +3.12%</span></span>
+<span class="tick"><span class="sym">GOLD</span> 2.318 <span class="pos">▲ +0.27%</span></span>
+<!-- duplicate for seamless loop -->
+<span class="tick"><span class="sym">DAX</span> 18.432 <span class="pos">▲ +0.84%</span></span>
+<span class="tick"><span class="sym">AAPL</span> 189.45 <span class="pos">▲ +1.12%</span></span>
+<span class="tick"><span class="sym">MSFT</span> 415.20 <span class="neg">▼ -0.31%</span></span>
+<span class="tick"><span class="sym">S&amp;P 500</span> 5.218 <span class="pos">▲ +0.55%</span></span>
+<span class="tick"><span class="sym">NVDA</span> 878.10 <span class="pos">▲ +2.41%</span></span>
+<span class="tick"><span class="sym">EURUSD</span> 1.0842 <span class="neg">▼ -0.09%</span></span>
+<span class="tick"><span class="sym">BTC</span> 62.450 <span class="pos">▲ +3.12%</span></span>
+<span class="tick"><span class="sym">GOLD</span> 2.318 <span class="pos">▲ +0.27%</span></span>
+</div>
+</div>
+
+</body>
+</html>
